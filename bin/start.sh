@@ -145,6 +145,11 @@ END
 ##
 associate_postgresql() {
 
+    # Use service if it's available 
+    if [ "$(getent hosts postgres | awk '{ print $1 }')" ]; then
+	POSTGRES_HOSTNAME="postgres"
+    fi
+
     # Use linked container if specified
     if [ -n "$POSTGRES_NAME" ]; then
         POSTGRES_HOSTNAME="$POSTGRES_PORT_5432_TCP_ADDR"
@@ -239,6 +244,12 @@ mkdir -p "$GUACAMOLE_LIB"
 # Point to associated guacd
 #
 
+# User service name if it is available
+if [ "$(getent hosts guacd | awk '{ print $1 }')" ]; then
+   GUACD_PORT_4822_TCP_ADDR="guacd"
+   GUACD_PORT_4822_TCP_PORT="4822"
+fi
+
 # Verify required link is present
 if [ -z "$GUACD_PORT_4822_TCP_ADDR" -o -z "$GUACD_PORT_4822_TCP_PORT" ]; then
     cat <<END
@@ -290,6 +301,11 @@ fi
 # Use PostgreSQL if database specified
 if [ -n "$POSTGRES_DATABASE" ]; then
     associate_postgresql
+fi
+
+# Add Extension
+if [ "$(ls -A /opt/guacamole/extensions )" ]; then
+    ln -s /opt/guacamole/extensions/*-extension.jar "$GUACAMOLE_EXT"
 fi
 
 #
